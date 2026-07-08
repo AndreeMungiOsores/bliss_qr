@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -22,9 +22,10 @@ model QrLink {
   visits   QrVisit[]
   versions QrDestinationVersion[]
 
-  @@index([type])
-  @@index([active])
-  @@index([updatedAt])
+  @@index([type], map: "bliss_qr_links_type_idx")
+  @@index([active], map: "bliss_qr_links_active_idx")
+  @@index([updatedAt], map: "bliss_qr_links_updated_at_idx")
+  @@map("bliss_qr_links")
 }
 
 model QrStyle {
@@ -37,6 +38,8 @@ model QrStyle {
   errorCorrectionLevel String @default("M")
 
   link QrLink @relation(fields: [linkId], references: [id], onDelete: Cascade)
+
+  @@map("bliss_qr_styles")
 }
 
 model QrVisit {
@@ -49,7 +52,8 @@ model QrVisit {
 
   link QrLink @relation(fields: [linkId], references: [id], onDelete: Cascade)
 
-  @@index([linkId, visitedAt])
+  @@index([linkId, visitedAt], map: "bliss_qr_visits_link_id_visited_at_idx")
+  @@map("bliss_qr_visits")
 }
 
 model QrDestinationVersion {
@@ -61,5 +65,6 @@ model QrDestinationVersion {
 
   link QrLink @relation(fields: [linkId], references: [id], onDelete: Cascade)
 
-  @@index([linkId, changedAt])
+  @@index([linkId, changedAt], map: "bliss_qr_destination_versions_link_id_changed_at_idx")
+  @@map("bliss_qr_destination_versions")
 }

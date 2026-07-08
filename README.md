@@ -5,7 +5,7 @@ Generador local de QR estaticos y dinamicos para enlaces. El QR dinamico guarda 
 ## Stack
 
 - Next.js 16 + React 19 + TypeScript
-- Prisma 6 + SQLite local
+- Prisma 6 + PostgreSQL en Supabase
 - `qrcode.react` para preview SVG
 - `qrcode` para exportar SVG/PNG desde API
 - Tailwind CSS 4
@@ -14,26 +14,34 @@ Generador local de QR estaticos y dinamicos para enlaces. El QR dinamico guarda 
 
 ```bash
 npm install
-npm run db:setup
 npm run dev
 ```
 
 Abre `http://localhost:3000`.
 
-`npm run db:setup` crea `prisma/dev.db` usando la migracion SQL incluida. Tambien puedes usar Prisma Migrate en otra maquina con:
+El proyecto apunta a Supabase por medio de `DATABASE_URL`. Copia `.env.example` a `.env` y reemplaza `YOUR_DATABASE_PASSWORD`.
+
+Para aplicar migraciones pendientes:
 
 ```bash
-npm run db:migrate -- --name init
+npm run db:deploy
 ```
 
-En este entorno Windows, `prisma migrate dev` devolvio un error interno del schema engine sin detalle, por eso el proyecto incluye el setup SQLite directo.
+Las tablas fisicas en Supabase usan prefijo del proyecto para no confundirse con otros datos:
+
+```txt
+bliss_qr_links
+bliss_qr_styles
+bliss_qr_visits
+bliss_qr_destination_versions
+```
 
 ## Variables
 
 Copia `.env.example` a `.env`:
 
 ```env
-DATABASE_URL="file:./dev.db"
+DATABASE_URL="postgresql://postgres.yqgnssxyimiigoewiidr:YOUR_DATABASE_PASSWORD@aws-1-us-east-1.pooler.supabase.com:5432/postgres?schema=public&connection_limit=1"
 APP_BASE_URL="http://localhost:3000"
 IP_HASH_SECRET="replace-with-a-long-random-string"
 ```
@@ -70,37 +78,17 @@ insta -> https://www.instagram.com/tu_usuario
 
 Cuando editas el destino, el QR sigue apuntando a `/r/insta`, pero la redireccion cambia.
 
-## Vercel + GitHub
+## Vercel + GitHub + Supabase
 
-El repo puede desplegarse en Vercel desde GitHub. Para produccion no uses SQLite, porque el filesystem de Vercel no es persistente para una base local.
-
-Recomendado:
-
-1. Crea una base Postgres en Neon, Supabase o Prisma Postgres.
-2. Cambia `prisma/schema.prisma`:
-
-```prisma
-datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
-}
-```
-
-3. Configura variables en Vercel:
+El repo puede desplegarse en Vercel desde GitHub. En Vercel configura estas variables:
 
 ```env
-DATABASE_URL="postgresql://..."
+DATABASE_URL="postgresql://postgres.yqgnssxyimiigoewiidr:YOUR_DATABASE_PASSWORD@aws-1-us-east-1.pooler.supabase.com:5432/postgres?schema=public&connection_limit=1"
 APP_BASE_URL="https://q.tudominio.com"
 IP_HASH_SECRET="un-secreto-largo"
 ```
 
-4. Ejecuta migraciones contra Postgres desde local:
-
-```bash
-npm run db:migrate -- --name init
-```
-
-5. Conecta el repo de GitHub en Vercel y asigna un dominio fijo como `q.tudominio.com`.
+Conecta el repo de GitHub en Vercel y asigna un dominio fijo como `q.tudominio.com`.
 
 Para QRs impresos, usa siempre el dominio final de produccion, no una URL preview de Vercel.
 
@@ -118,6 +106,5 @@ Para QRs impresos, usa siempre el dominio final de produccion, no una URL previe
 
 - Login/admin antes de publicar.
 - Rate limiting para creacion y redireccion.
-- Postgres en produccion.
 - Dominio custom corto.
 - Mas analitica por dispositivo/pais si lo necesitas.
