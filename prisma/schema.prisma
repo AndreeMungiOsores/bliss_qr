@@ -1,0 +1,65 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model QrLink {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  type        String   @default("DYNAMIC")
+  title       String
+  targetUrl   String
+  active      Boolean  @default(true)
+  scanCount   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  style    QrStyle?
+  visits   QrVisit[]
+  versions QrDestinationVersion[]
+
+  @@index([type])
+  @@index([active])
+  @@index([updatedAt])
+}
+
+model QrStyle {
+  id                   String @id @default(cuid())
+  linkId               String @unique
+  foregroundColor      String @default("#111827")
+  backgroundColor      String @default("#ffffff")
+  margin               Int    @default(2)
+  size                 Int    @default(280)
+  errorCorrectionLevel String @default("M")
+
+  link QrLink @relation(fields: [linkId], references: [id], onDelete: Cascade)
+}
+
+model QrVisit {
+  id        String   @id @default(cuid())
+  linkId    String
+  visitedAt DateTime @default(now())
+  userAgent String?
+  referer   String?
+  ipHash    String?
+
+  link QrLink @relation(fields: [linkId], references: [id], onDelete: Cascade)
+
+  @@index([linkId, visitedAt])
+}
+
+model QrDestinationVersion {
+  id        String   @id @default(cuid())
+  linkId    String
+  oldUrl    String
+  newUrl    String
+  changedAt DateTime @default(now())
+
+  link QrLink @relation(fields: [linkId], references: [id], onDelete: Cascade)
+
+  @@index([linkId, changedAt])
+}
