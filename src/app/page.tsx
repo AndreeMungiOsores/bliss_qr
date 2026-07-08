@@ -16,12 +16,23 @@ const linkInclude = {
 } satisfies Prisma.QrLinkInclude;
 
 export default async function Home() {
-  const links = await prisma.qrLink.findMany({
-    include: linkInclude,
-    orderBy: { updatedAt: "desc" },
-  });
+  let initialLinks: LinkSummary[] = [];
+  let initialMessage = "";
 
-  return <QrDashboard initialLinks={links.map(serializeLink)} />;
+  try {
+    const links = await prisma.qrLink.findMany({
+      include: linkInclude,
+      orderBy: { updatedAt: "desc" },
+    });
+
+    initialLinks = links.map(serializeLink);
+  } catch (error) {
+    console.error("Unable to load QR links", error);
+    initialMessage =
+      "No se pudo conectar con la base de datos. Revisa DATABASE_URL en Vercel y redeploy.";
+  }
+
+  return <QrDashboard initialLinks={initialLinks} initialMessage={initialMessage} />;
 }
 
 function serializeLink(

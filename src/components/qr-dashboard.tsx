@@ -84,7 +84,13 @@ const emptyCreateForm: CreateForm = {
   style: defaultQrStyle,
 };
 
-export function QrDashboard({ initialLinks = [] }: { initialLinks?: LinkSummary[] }) {
+export function QrDashboard({
+  initialLinks = [],
+  initialMessage = "",
+}: {
+  initialLinks?: LinkSummary[];
+  initialMessage?: string;
+}) {
   const [links, setLinks] = useState<LinkSummary[]>(initialLinks);
   const [selectedId, setSelectedId] = useState<string>("");
   const [selectedDetail, setSelectedDetail] = useState<LinkDetail | null>(null);
@@ -93,7 +99,7 @@ export function QrDashboard({ initialLinks = [] }: { initialLinks?: LinkSummary[
   const baseUrl = useClientOrigin();
   const [loading, setLoading] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useState(initialMessage);
   const [copied, setCopied] = useState("");
 
   const selected = useMemo(
