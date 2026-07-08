@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { getRequestIpHash } from "@/lib/analytics";
-import { prisma } from "@/lib/prisma";
+import { findLinkBySlug, recordVisit } from "@/lib/data";
 
 export const dynamic = "force-dynamic";
 
@@ -10,7 +10,7 @@ type RouteContext = {
 
 export async function GET(request: NextRequest, context: RouteContext) {
   const { slug } = await context.params;
-  const link = await prisma.qrLink.findUnique({ where: { slug } });
+  const link = await findLinkBySlug(slug);
 
   if (!link || link.type !== "DYNAMIC") {
     return statusPage("QR no encontrado", 404);
@@ -21,20 +21,11 @@ export async function GET(request: NextRequest, context: RouteContext) {
   }
 
   try {
-    await prisma.$transaction([
-      prisma.qrVisit.create({
-        data: {
-          linkId: link.id,
-          userAgent: request.headers.get("user-agent"),
-          referer: request.headers.get("referer"),
-          ipHash: getRequestIpHash(request),
-        },
-      }),
-      prisma.qrLink.update({
-        where: { id: link.id },
-        data: { scanCount: { increment: 1 } },
-      }),
-    ]);
+    await recordVisit(link, {
+      userAgent: request.headers.get("user-agent"),
+      referer: request.headers.get("referer"),
+      ipHash: getRequestIpHash(request),
+    });
   } catch (error) {
     console.error("No se pudo registrar el scan", error);
   }

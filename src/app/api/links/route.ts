@@ -1,29 +1,14 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { Prisma } from "@prisma/client";
 import { assertValidSlug, generateUniqueSlug, normalizeSlug, normalizeUrl } from "@/lib/links";
-import { prisma } from "@/lib/prisma";
-import { coerceQrStyle, defaultQrStyle, isQrType } from "@/lib/qr";
+import { createLink, linkExistsBySlug, listLinks } from "@/lib/data";
+import { coerceQrStyle, isQrType } from "@/lib/qr";
 import { jsonError, readJsonBody } from "@/lib/api";
 
 export const dynamic = "force-dynamic";
 
-const linkInclude = {
-  style: true,
-  _count: {
-    select: {
-      visits: true,
-      versions: true,
-    },
-  },
-} satisfies Prisma.QrLinkInclude;
-
 export async function GET() {
-  const links = await prisma.qrLink.findMany({
-    include: linkInclude,
-    orderBy: { updatedAt: "desc" },
-  });
-
-  return NextResponse.json({ links: links.map(serializeLink) });
+  const links = await listLinks();
+  return NextResponse.json({ links });
 }
 
 export async function POST(request: NextRequest) {
@@ -45,14 +30,13 @@ export async function POST(request: NextRequest) {
     const slug = requestedSlug
       ? requestedSlug
       : await generateUniqueSlug(
-          async (candidate) =>
-            Boolean(await prisma.qrLink.findUnique({ where: { slug: candidate } })),
+          async (candidate) => linkExistsBySlug(candidate),
           title,
         );
 
     assertValidSlug(slug);
 
-    const existing = await prisma.qrLink.findUnique({ where: { slug } });
+    const existing = await linkExistsBySlug(slug);
 
     if (existing) {
       return jsonError("Ese slug ya existe. Prueba con otro.", 409);
@@ -62,38 +46,16 @@ export async function POST(request: NextRequest) {
       typeof body.style === "object" && body.style !== null ? body.style : {},
     );
 
-    const link = await prisma.qrLink.create({
-      data: {
-        slug,
-        type,
-        title,
-        targetUrl,
-        style: {
-          create: style,
-        },
-      },
-      include: linkInclude,
+    const link = await createLink({
+      slug,
+      type,
+      title,
+      targetUrl,
+      style,
     });
 
-    return NextResponse.json({ link: serializeLink(link) }, { status: 201 });
+    return NextResponse.json({ link }, { status: 201 });
   } catch (error) {
     return jsonError(error instanceof Error ? error.message : "No se pudo crear el QR.");
   }
-}
-
-function serializeLink(link: Prisma.QrLinkGetPayload<{ include: typeof linkInclude }>) {
-  return {
-    id: link.id,
-    slug: link.slug,
-    type: link.type,
-    title: link.title,
-    targetUrl: link.targetUrl,
-    active: link.active,
-    scanCount: link.scanCount,
-    createdAt: link.createdAt.toISOString(),
-    updatedAt: link.updatedAt.toISOString(),
-    style: link.style ?? defaultQrStyle,
-    visitCount: link._count.visits,
-    versionCount: link._count.versions,
-  };
 }

@@ -7,7 +7,7 @@ import type {
 import type { NextRequest } from "next/server";
 import { getRequestOrigin } from "@/lib/analytics";
 import { jsonError } from "@/lib/api";
-import { prisma } from "@/lib/prisma";
+import { getLinkForQr } from "@/lib/data";
 import { coerceQrStyle, getQrPayload } from "@/lib/qr";
 
 export const dynamic = "force-dynamic";
@@ -18,10 +18,7 @@ type RouteContext = {
 
 export async function GET(request: NextRequest, context: RouteContext) {
   const { id } = await context.params;
-  const link = await prisma.qrLink.findUnique({
-    where: { id },
-    include: { style: true },
-  });
+  const link = await getLinkForQr(id);
 
   if (!link) {
     return jsonError("QR no encontrado.", 404);

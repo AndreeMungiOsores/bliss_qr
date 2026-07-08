@@ -42,6 +42,8 @@ Copia `.env.example` a `.env`:
 
 ```env
 DATABASE_URL="postgresql://postgres.yqgnssxyimiigoewiidr:YOUR_DATABASE_PASSWORD@aws-1-us-east-1.pooler.supabase.com:5432/postgres?schema=public&connection_limit=1"
+SUPABASE_URL="https://yqgnssxyimiigoewiidr.supabase.co"
+SUPABASE_SERVICE_ROLE_KEY="YOUR_SUPABASE_SERVICE_ROLE_KEY"
 APP_BASE_URL="http://localhost:3000"
 IP_HASH_SECRET="replace-with-a-long-random-string"
 ```
@@ -84,9 +86,13 @@ El repo puede desplegarse en Vercel desde GitHub. En Vercel configura estas vari
 
 ```env
 DATABASE_URL="postgresql://postgres.yqgnssxyimiigoewiidr:YOUR_DATABASE_PASSWORD@aws-1-us-east-1.pooler.supabase.com:5432/postgres?schema=public&connection_limit=1"
+SUPABASE_URL="https://yqgnssxyimiigoewiidr.supabase.co"
+SUPABASE_SERVICE_ROLE_KEY="YOUR_SUPABASE_SERVICE_ROLE_KEY"
 APP_BASE_URL="https://q.tudominio.com"
 IP_HASH_SECRET="un-secreto-largo"
 ```
+
+En runtime, la app usa `SUPABASE_SERVICE_ROLE_KEY` de forma server-side para leer y escribir en Supabase sin exponer esa clave al navegador. `DATABASE_URL` se conserva para Prisma y migraciones.
 
 Conecta el repo de GitHub en Vercel y asigna un dominio fijo como `q.tudominio.com`.
 

@@ -18,6 +18,7 @@
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",
+    "@supabase/supabase-js": "^2.110.1",
     "lucide-react": "^1.23.0",
     "nanoid": "^5.1.16",
     "next": "16.2.10",
